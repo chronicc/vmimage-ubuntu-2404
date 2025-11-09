@@ -1,0 +1,32 @@
+name: build
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-cache
+      - name: Install apt dependencies
+        run: sudo apt install -y --no-install-recommends libguestfs-tools libvirt-clients libvirt-daemon-system qemu-kvm
+      - name: Create build directory
+        run: mkdir -p build/qemu
+      - name: Cache vendor image
+        uses: actions/cache@v4
+        with:
+          path: build/vendor.img
+          key: ${{ runner.os }}-vendor-image
+      - name: Download vendor image if not cached
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: wget -qO build/vendor.img https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+      - name: Build QEMU image
+        run: ./build-qemu.sh ./build/vendor.img --os-variant ubuntu24.04
