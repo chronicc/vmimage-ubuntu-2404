@@ -1,0 +1,12 @@
+#cloud-config
+
+chpasswd:
+  expire: False
+password: ubuntu
+
+package_upgrade: true
+
+power_state:
+  mode: poweroff
+  message: cloud-init finished
+  timeout: 60
