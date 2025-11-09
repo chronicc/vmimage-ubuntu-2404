@@ -9,13 +9,13 @@ Getting Started
 #### Ubuntu
 
 ```shell
-apt install libguestfs-tools libvirt-clients qemu-system virtinst
+apt install libguestfs-tools libvirt-clients libvirt-daemon-system qemu-kvm
 ```
 
 ### Build the virtual machine image
 
 ```shell
-# Download the Ubuntu cloud-image enabled image befor running the command
+# Download the Ubuntu cloud-init enabled image befor running the command
 ./build-qemu.sh ./noble-server-cloudimg-amd64.img --os-variant ubuntu24.04
 ```
 

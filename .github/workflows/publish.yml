@@ -1,0 +1,44 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '33 3 * * *' # Every day at 03:33 UTC
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-cache
+      - name: Install apt dependencies
+        run: sudo apt install -y --no-install-recommends libguestfs-tools libvirt-clients libvirt-daemon-system qemu-kvm
+      - name: Create build directory
+        run: mkdir -p build/qemu
+      - name: Cache vendor image
+        uses: actions/cache@v4
+        with:
+          path: build/vendor.img
+          key: ${{ runner.os }}-vendor-image
+      - name: Download vendor image if not cached
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: wget -qO build/vendor.img https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+      - name: Build QEMU image
+        run: ./build-qemu.sh ./build/vendor.img --os-variant ubuntu24.04
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=today::$(date +'%Y.%m.%d')"
+      - name: Upload QEMU image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronicc-ubuntu-24.04-v${{ steps.date.outputs.today }}.qcow2
+          path: build/qemu/disk.qcow2
+          retention-days: 7
+          overwrite: true
