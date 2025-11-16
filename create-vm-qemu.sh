@@ -83,7 +83,7 @@ QEMU_IMG="${PROJECT_DIR}/build/qemu/disk.qcow2"
 echo "Copying source image to ${QEMU_IMG}"
 cp "${SOURCE_IMAGE}" "${QEMU_IMG}"
 
-echo "Resizing disk image to ${DISK_SIZE}"
+echo -n "Resizing disk image to ${DISK_SIZE}..."
 qemu-img resize "${QEMU_IMG}" "${DISK_SIZE}"
 
 case "${BACKEND}" in
@@ -100,16 +100,20 @@ case "${BACKEND}" in
         ;;
     libvirt)
         echo "Using libvirt backend"
-        virt-install \
-            --cloud-init "user-data=${PROJECT_DIR}/user-data,meta-data=${PROJECT_DIR}/meta-data" \
-            --disk "path=${QEMU_IMG},format=qcow2" \
-            --graphics none \
-            --name "${NAME}" \
-            --os-variant "${OS_VARIANT}" \
-            --ram "${MEMORY}" \
-            --vcpus "${CPU}" \
-            --virt-type kvm
-        virsh undefine "${NAME}"
+        echo "Removing existing VM with name ${NAME} if it exists"
+        virsh undefine --nvram "${NAME}" || true
+        CMD=(virt-install)
+        CMD+=("--cloud-init" "user-data=${PROJECT_DIR}/user-data,meta-data=${PROJECT_DIR}/meta-data")
+        CMD+=("--disk" "path=${QEMU_IMG},format=qcow2")
+        CMD+=("--graphics" "none")
+        CMD+=("--name" "${NAME}")
+        CMD+=("--os-variant" "${OS_VARIANT}")
+        CMD+=("--ram" "${MEMORY}")
+        CMD+=("--vcpus" "${CPU}")
+        CMD+=("--virt-type" "kvm")
+        echo "Running: ${CMD[*]}"
+        "${CMD[@]}"
+        virsh undefine --nvram "${NAME}"
         ;;
     *)
         echo "Unknown backend: ${BACKEND}"

@@ -1,3 +1,4 @@
 *.img
 *.iso
+*.qcow2
 build/
